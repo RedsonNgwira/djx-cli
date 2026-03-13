@@ -25,11 +25,17 @@ urlpatterns = [
     
     # Find project urls.py (exclude app urls.py files)
     project_urls = None
+    
+    # Look for project_name/urls.py pattern
     for pattern in ['*/urls.py']:
-        matches = glob.glob(pattern)
-        # Filter out app urls.py, keep only project urls.py
+        matches = sorted(glob.glob(pattern))
         for match in matches:
-            if not match.startswith(app_name + '/'):
+            # Skip if it's an app urls.py (inside app directory)
+            if match.startswith(app_name + '/'):
+                continue
+            # Check if this looks like a project urls.py (has settings.py sibling)
+            dir_name = match.split('/')[0]
+            if os.path.exists(f"{dir_name}/settings.py"):
                 project_urls = match
                 break
         if project_urls:
@@ -41,33 +47,43 @@ urlpatterns = [
     
     try:
         with open(project_urls, 'r') as f:
-            content = f.read()
+            lines = f.readlines()
         
-        include_line = f"    path('{app_name}/', include('{app_name}.urls')),"
+        include_line = f"    path('{app_name}/', include('{app_name}.urls')),\n"
         
-        if include_line in content or f"'{app_name}.urls'" in content:
+        # Check if already wired
+        if any(f"'{app_name}.urls'" in line for line in lines):
             print(f"✓ URLs already wired")
             return
         
-        # Add include import if missing
-        if 'from django.urls import' in content:
-            if 'include' not in content:
-                # Add include to existing import
-                content = content.replace(
-                    'from django.urls import path',
-                    'from django.urls import include, path'
-                )
-        else:
-            # Add full import line
-            content = 'from django.urls import include, path\n' + content
+        # Add include to imports
+        import_added = False
+        for i, line in enumerate(lines):
+            if 'from django.urls import' in line and 'include' not in line:
+                # Add include to the import
+                lines[i] = line.rstrip().rstrip(')').rstrip(',') 
+                if 'path' in line:
+                    lines[i] = line.replace('from django.urls import', 'from django.urls import include,')
+                import_added = True
+                break
+        
+        if not import_added:
+            # Find where to insert import (after docstring, before other imports)
+            for i, line in enumerate(lines):
+                if line.startswith('from django.contrib'):
+                    lines.insert(i, 'from django.urls import include, path\n')
+                    break
         
         # Add path to urlpatterns
-        if 'urlpatterns = [' in content:
-            content = content.replace('urlpatterns = [', f'urlpatterns = [\n{include_line}')
-            with open(project_urls, 'w') as f:
-                f.write(content)
-            print(f"✓ URLs wired to {project_urls}")
-        else:
-            print(f"⚠ Add to {project_urls}: path('{app_name}/', include('{app_name}.urls'))")
+        for i, line in enumerate(lines):
+            if 'urlpatterns = [' in line:
+                lines.insert(i + 1, include_line)
+                break
+        
+        with open(project_urls, 'w') as f:
+            f.writelines(lines)
+        print(f"✓ URLs wired to {project_urls}")
+        
     except Exception as e:
         print(f"⚠ Add to urls.py: path('{app_name}/', include('{app_name}.urls'))")
+        print(f"   Error: {e}")

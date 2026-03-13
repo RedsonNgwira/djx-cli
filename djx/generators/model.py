@@ -34,13 +34,12 @@ def generate(name, fields, app_name):
 class {class_name}(models.Model):
 """
     
+    # Track first string/text field for __str__
+    first_text_field = None
+    
     for field_name, field_type in parsed_fields:
         if field_type.startswith('references'):
-            # Handle references:ModelName or just references (use field name)
-            if ':' in field_type:
-                ref_model = field_type.split(':', 1)[1]
-            else:
-                ref_model = field_name
+            ref_model = field_type.split(':')[1] if ':' in field_type else field_type.replace('references', '').strip()
             ref_model = to_class_name(ref_model)
             
             # Find the app that contains this model
@@ -48,17 +47,29 @@ class {class_name}(models.Model):
             if ref_app:
                 model_code += f"    {field_name} = models.ForeignKey('{ref_app}.{ref_model}', on_delete=models.CASCADE)\n"
             else:
-                # Fallback: assume it's in the same app or use app.Model format
                 model_code += f"    {field_name} = models.ForeignKey('{ref_model}', on_delete=models.CASCADE)  # TODO: Add app label if needed\n"
         else:
             model_code += f"    {field_name} = {FIELD_MAP.get(field_type, 'models.CharField(max_length=255)')}\n"
+            # Remember first string/text field for __str__
+            if first_text_field is None and field_type in ['string', 'text', 'email', 'url']:
+                first_text_field = field_name
     
     model_code += """    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.__class__.__name__} {self.pk}"
-
+"""
+    
+    # Smart __str__ method
+    if first_text_field:
+        model_code += f"""    def __str__(self):
+        return self.{first_text_field}[:50]
+"""
+    else:
+        model_code += f"""    def __str__(self):
+        return f"{class_name} {{self.pk}}"
+"""
+    
+    model_code += """
     class Meta:
         ordering = ['-created_at']
 """

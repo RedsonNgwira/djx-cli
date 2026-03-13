@@ -11,10 +11,14 @@ def cli():
 @click.argument('project_name')
 @click.option('--no-venv', is_flag=True, help='Skip virtual environment creation')
 @click.option('--no-git', is_flag=True, help='Skip git initialization')
-def new(project_name, no_venv, no_git):
+@click.option('--venv/--no-venv', default=True, prompt='Create virtual environment?', 
+              help='Create virtual environment (default: yes)')
+def new(project_name, no_venv, no_git, venv):
     """Create new Django project with everything configured"""
     from .commands.new import create_project
-    create_project(project_name, no_venv, no_git)
+    # If --no-venv flag is used, it overrides the prompt
+    skip_venv = no_venv or not venv
+    create_project(project_name, skip_venv, no_git)
 
 @cli.command()
 @click.argument('name')

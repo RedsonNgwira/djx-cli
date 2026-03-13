@@ -10,7 +10,7 @@ setup(
             "djx=djx.cli:cli",
         ],
     },
-    author="Your Name",
+    author="Redson Ngwira",
     description="Convention over configuration for Django - Rails-like scaffolding and generators",
     python_requires=">=3.8",
 )

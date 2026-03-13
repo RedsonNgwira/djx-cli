@@ -56,34 +56,37 @@ urlpatterns = [
             print(f"✓ URLs already wired")
             return
         
-        # Add include to imports
-        import_added = False
+        # Add include to imports - find and replace the import line
+        import_fixed = False
         for i, line in enumerate(lines):
-            if 'from django.urls import' in line and 'include' not in line:
-                # Add include to the import
-                lines[i] = line.rstrip().rstrip(')').rstrip(',') 
-                if 'path' in line:
-                    lines[i] = line.replace('from django.urls import', 'from django.urls import include,')
-                import_added = True
+            # Only look at actual import lines (start with 'from')
+            if line.startswith('from django.urls import'):
+                if 'include' not in line:
+                    # Replace entire line with include added
+                    lines[i] = 'from django.urls import include, path\n'
+                    import_fixed = True
+                elif 'include' in line:
+                    import_fixed = True  # Already has include
                 break
         
-        if not import_added:
-            # Find where to insert import (after docstring, before other imports)
-            for i, line in enumerate(lines):
-                if line.startswith('from django.contrib'):
-                    lines.insert(i, 'from django.urls import include, path\n')
-                    break
-        
         # Add path to urlpatterns
+        urlpatterns_found = False
         for i, line in enumerate(lines):
             if 'urlpatterns = [' in line:
                 lines.insert(i + 1, include_line)
+                urlpatterns_found = True
                 break
         
-        with open(project_urls, 'w') as f:
-            f.writelines(lines)
-        print(f"✓ URLs wired to {project_urls}")
+        if urlpatterns_found:
+            with open(project_urls, 'w') as f:
+                f.writelines(lines)
+            if import_fixed:
+                print(f"✓ URLs wired to {project_urls}")
+            else:
+                print(f"⚠ URLs added to {project_urls} (check imports)")
+        else:
+            print(f"⚠ Could not find urlpatterns in {project_urls}")
         
     except Exception as e:
-        print(f"⚠ Add to urls.py: path('{app_name}/', include('{app_name}.urls'))")
-        print(f"   Error: {e}")
+        print(f"⚠ Error wiring URLs: {e}")
+        print(f"   Add manually: path('{app_name}/', include('{app_name}.urls'))")

@@ -8,6 +8,15 @@ def cli():
     pass
 
 @cli.command()
+@click.argument('project_name')
+@click.option('--no-venv', is_flag=True, help='Skip virtual environment creation')
+@click.option('--no-git', is_flag=True, help='Skip git initialization')
+def new(project_name, no_venv, no_git):
+    """Create new Django project with everything configured"""
+    from .commands.new import create_project
+    create_project(project_name, no_venv, no_git)
+
+@cli.command()
 @click.argument('name')
 @click.argument('fields', nargs=-1)
 @click.option('--app', default=None)
@@ -32,6 +41,14 @@ def controller(name, app):
     """Generate views and templates"""
     from .generators.controller import generate
     generate(name, app)
+
+@cli.command()
+@click.argument('resource_type')
+@click.argument('name')
+def destroy(resource_type, name):
+    """Destroy scaffold/model/controller (e.g: djx destroy scaffold Post)"""
+    from .commands.destroy import destroy_resource
+    destroy_resource(resource_type, name)
 
 @cli.command()
 @click.argument('name')
@@ -59,6 +76,12 @@ def wire(app_name):
     """Wire app URLs to project urls.py"""
     from .generators.urls import wire_urls
     wire_urls(app_name, app_name)
+
+@cli.command()
+def routes():
+    """Display all URL routes"""
+    from .commands.routes import show_routes
+    show_routes()
 
 if __name__ == '__main__':
     cli()

@@ -8,39 +8,59 @@ Convention over configuration for Django. Rails-like scaffolding and generators.
 pip install -e .
 ```
 
-## Usage
+## Quick Start
 
-### Scaffold (Model + Views + Templates + URLs)
+```bash
+# Create new project (venv, Django, git - all automatic)
+djx new myproject
+cd myproject
+source venv/bin/activate
+
+# Generate full CRUD
+djx scaffold Post title:string content:text published:boolean
+
+# Run migrations
+python manage.py makemigrations && python manage.py migrate
+
+# Start server
+python manage.py runserver
+```
+
+Visit: `http://127.0.0.1:8000/posts/`
+
+## Commands
+
+### Project Management
+
+```bash
+djx new myproject              # Create new Django project with venv, git
+djx routes                     # Display all URL routes
+```
+
+### Generators
+
 ```bash
 djx scaffold Post title:string body:text published:boolean
 djx scaffold Comment post:references author:string content:text
-```
-
-### Model Only
-```bash
 djx model User email:email name:string age:integer
-```
-
-### Controller (Views + Templates)
-```bash
 djx controller Post
-```
-
-### Migration
-```bash
 djx migration add_index_to_posts
 ```
 
-### Config Management
+### Destroy
+
+```bash
+djx destroy scaffold Post      # Remove app, URLs, settings entry
+djx destroy model Post         # Remove model only
+djx destroy controller Post    # Remove views/templates only
+```
+
+### Configuration
+
 ```bash
 djx config DEBUG False
 djx config ALLOWED_HOSTS '["localhost", "127.0.0.1"]'
-```
-
-### Install Packages
-```bash
-djx add django-crispy-forms
-djx add djangorestframework
+djx add django-crispy-forms    # Install + add to INSTALLED_APPS
 ```
 
 ## Field Types

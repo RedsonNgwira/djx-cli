@@ -13,7 +13,7 @@ authors = [
     {name = "Your Name"}
 ]
 dependencies = [
-    "Django>=4.0",
+    "Django>=4.2,<6.0",
     "click>=8.0",
 ]
 

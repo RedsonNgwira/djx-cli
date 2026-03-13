@@ -5,7 +5,7 @@ import sys
 def create_project(project_name, no_venv, no_git):
     """Create new Django project with full setup"""
     
-    print(f"🚀 Creating Django project: {project_name}")
+    print(f"🚀 Creating Django project: {project_name}\n")
     
     # Create project directory
     if os.path.exists(project_name):
@@ -18,7 +18,8 @@ def create_project(project_name, no_venv, no_git):
     # Create virtual environment
     if not no_venv:
         print("📦 Creating virtual environment...")
-        subprocess.run([sys.executable, '-m', 'venv', 'venv'], check=True)
+        subprocess.run([sys.executable, '-m', 'venv', 'venv'], check=True, 
+                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
         # Determine pip path
         pip_path = 'venv/bin/pip' if os.name != 'nt' else 'venv\\Scripts\\pip.exe'
@@ -26,14 +27,15 @@ def create_project(project_name, no_venv, no_git):
         
         # Install Django
         print("📥 Installing Django...")
-        subprocess.run([pip_path, 'install', 'django'], check=True)
+        subprocess.run([pip_path, 'install', '-q', 'django'], check=True)
     else:
         pip_path = 'pip'
         python_path = sys.executable
     
     # Create Django project
     print("🏗️  Creating Django project structure...")
-    subprocess.run(['django-admin', 'startproject', project_name, '.'], check=True)
+    subprocess.run(['django-admin', 'startproject', project_name, '.'], check=True,
+                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     # Create .gitignore
     gitignore = """*.pyc
@@ -80,14 +82,18 @@ djx destroy scaffold Post
     
     # Run initial migration
     print("🗄️  Running initial migrations...")
-    subprocess.run([python_path, 'manage.py', 'migrate'], check=True)
+    subprocess.run([python_path, 'manage.py', 'migrate'], check=True,
+                  stdout=subprocess.DEVNULL)
     
     # Initialize git
     if not no_git:
         print("📝 Initializing git repository...")
-        subprocess.run(['git', 'init'], check=True)
-        subprocess.run(['git', 'add', '-A'], check=True)
-        subprocess.run(['git', 'commit', '-m', 'Initial commit'], check=True)
+        subprocess.run(['git', 'init'], check=True,
+                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(['git', 'add', '-A'], check=True,
+                      stdout=subprocess.DEVNULL)
+        subprocess.run(['git', 'commit', '-m', 'Initial commit'], check=True,
+                      stdout=subprocess.DEVNULL)
     
     print(f"\n✅ Project {project_name} created successfully!")
     print(f"\nNext steps:")

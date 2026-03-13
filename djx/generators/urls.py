@@ -50,8 +50,16 @@ urlpatterns = [
             return
         
         # Add include import if missing
-        if 'from django.urls import' in content and 'include' not in content:
-            content = content.replace('from django.urls import', 'from django.urls import include,')
+        if 'from django.urls import' in content:
+            if 'include' not in content:
+                # Add include to existing import
+                content = content.replace(
+                    'from django.urls import path',
+                    'from django.urls import include, path'
+                )
+        else:
+            # Add full import line
+            content = 'from django.urls import include, path\n' + content
         
         # Add path to urlpatterns
         if 'urlpatterns = [' in content:

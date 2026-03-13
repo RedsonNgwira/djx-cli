@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import shutil
 
 def create_project(project_name, no_venv, no_git):
     """Create new Django project with full setup"""
@@ -18,24 +19,37 @@ def create_project(project_name, no_venv, no_git):
     # Create virtual environment
     if not no_venv:
         print("📦 Creating virtual environment...")
-        subprocess.run([sys.executable, '-m', 'venv', 'venv'], check=True, 
-                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            subprocess.run([sys.executable, '-m', 'venv', 'venv'], check=True, 
+                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except subprocess.CalledProcessError:
+            print("⚠️  Failed to create venv. Install with: pip install virtualenv")
+            print("   Continuing without virtual environment...")
+            no_venv = True
         
-        # Determine pip path
-        pip_path = 'venv/bin/pip' if os.name != 'nt' else 'venv\\Scripts\\pip.exe'
-        python_path = 'venv/bin/python' if os.name != 'nt' else 'venv\\Scripts\\python.exe'
-        
-        # Install Django
-        print("📥 Installing Django...")
-        subprocess.run([pip_path, 'install', '-q', 'django'], check=True)
-    else:
+        if not no_venv:
+            # Determine pip path
+            pip_path = 'venv/bin/pip' if os.name != 'nt' else 'venv\\Scripts\\pip.exe'
+            python_path = 'venv/bin/python' if os.name != 'nt' else 'venv\\Scripts\\python.exe'
+            
+            # Install Django
+            print("📥 Installing Django...")
+            subprocess.run([pip_path, 'install', '-q', 'django'], check=True)
+    
+    if no_venv:
         pip_path = 'pip'
         python_path = sys.executable
     
     # Create Django project
     print("🏗️  Creating Django project structure...")
-    subprocess.run(['django-admin', 'startproject', project_name, '.'], check=True,
-                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        subprocess.run(['django-admin', 'startproject', project_name, '.'], check=True,
+                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("❌ django-admin not found. Installing Django...")
+        subprocess.run([pip_path, 'install', '-q', 'django'], check=True)
+        subprocess.run(['django-admin', 'startproject', project_name, '.'], check=True,
+                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     # Create .gitignore
     gitignore = """*.pyc
@@ -58,7 +72,7 @@ venv/
     # Create README
     readme = f"""# {project_name}
 
-Django project created with djx.
+Django project created with djx-cli.
 
 ## Setup
 
@@ -85,15 +99,21 @@ djx destroy scaffold Post
     subprocess.run([python_path, 'manage.py', 'migrate'], check=True,
                   stdout=subprocess.DEVNULL)
     
-    # Initialize git
+    # Initialize git (optional)
     if not no_git:
-        print("📝 Initializing git repository...")
-        subprocess.run(['git', 'init'], check=True,
-                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(['git', 'add', '-A'], check=True,
-                      stdout=subprocess.DEVNULL)
-        subprocess.run(['git', 'commit', '-m', 'Initial commit'], check=True,
-                      stdout=subprocess.DEVNULL)
+        if shutil.which('git'):
+            print("📝 Initializing git repository...")
+            try:
+                subprocess.run(['git', 'init'], check=True,
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run(['git', 'add', '-A'], check=True,
+                              stdout=subprocess.DEVNULL)
+                subprocess.run(['git', 'commit', '-m', 'Initial commit'], check=True,
+                              stdout=subprocess.DEVNULL)
+            except subprocess.CalledProcessError:
+                print("⚠️  Git initialization failed (continuing anyway)")
+        else:
+            print("⚠️  Git not found (skipping git init)")
     
     print(f"\n✅ Project {project_name} created successfully!")
     print(f"\nNext steps:")

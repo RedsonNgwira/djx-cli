@@ -114,40 +114,32 @@ def routes():
 @cli.command()
 def console():
     """Open Django shell with all models auto-imported"""
-    import subprocess, sys, os, glob
+    import subprocess, sys, os, glob, tempfile
 
-    # Find settings module
-    settings = None
-    for f in glob.glob('*/settings.py'):
-        settings = f.replace('/', '.').replace('.py', '')
-        break
-    if not settings:
+    if not os.path.exists('manage.py'):
         click.echo("❌ No Django project found. Run from project root.")
         sys.exit(1)
 
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings)
+    # Find all models across all apps
+    model_imports = []
+    for models_file in glob.glob('*/models.py'):
+        app = models_file.split('/')[0]
+        with open(models_file) as f:
+            for line in f:
+                if line.startswith('class ') and 'Model' in line:
+                    model_name = line.split('(')[0].replace('class ', '').strip()
+                    model_imports.append(f"from {app}.models import {model_name}")
 
-    # Build auto-import startup script
-    import django
-    django.setup()
-    from django.apps import apps
-    imports = '\n'.join(
-        f"from {m.app_config.name}.models import {m.__name__}"
-        for m in apps.get_models()
-    )
-    startup = f'import django\n{imports}\nprint("✓ Models loaded: {", ".join(m.__name__ for m in apps.get_models())}")'
+    startup = '\n'.join(model_imports)
+    if model_imports:
+        startup += f'\nprint("✓ Models loaded: {", ".join(l.split()[-1] for l in model_imports)}")'
 
-    import tempfile
     with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
         f.write(startup)
         startup_file = f.name
 
     click.echo(click.style("🐍 Django Console — all models imported", fg='green'))
-    subprocess.run([sys.executable, '-c',
-        f'import os; os.environ["DJANGO_SETTINGS_MODULE"]="{settings}"; '
-        f'import django; django.setup(); '
-        f'exec(open("{startup_file}").read()); '
-        f'import code; code.interact(local=dict(locals(), **globals()))'])
+    subprocess.run([sys.executable, 'manage.py', 'shell', f'--startup={startup_file}'])
     os.unlink(startup_file)
 
 @cli.command()

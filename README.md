@@ -145,6 +145,27 @@ posts/<int:pk>/delete/   post-delete    DeleteView
 
 ---
 
+### `djx db`
+Shortcut for the most common database workflow.
+
+```bash
+djx db          # makemigrations + migrate in one command
+djx db reset    # flush + migrate (wipe and rebuild)
+```
+
+---
+
+### `djx console`
+Django shell with all your models already imported — no manual imports needed.
+
+```bash
+djx console
+# ✓ Models loaded: Post, Comment, User
+# >>> Post.objects.all()
+```
+
+---
+
 ### `djx add <package>`
 Install a package and add it to `INSTALLED_APPS` automatically.
 

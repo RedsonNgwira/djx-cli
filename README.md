@@ -6,6 +6,8 @@
 [![Python](https://img.shields.io/pypi/pyversions/djx-cli)](https://pypi.org/project/djx-cli/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+![DJX Demo](demo.gif)
+
 **3 commands. Full CRUD app. No boilerplate.**
 
 ```bash

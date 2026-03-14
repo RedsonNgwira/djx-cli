@@ -114,13 +114,12 @@ def routes():
 @cli.command()
 def console():
     """Open Django shell with all models auto-imported"""
-    import subprocess, sys, os, glob, tempfile
+    import subprocess, sys, os, glob
 
     if not os.path.exists('manage.py'):
         click.echo("❌ No Django project found. Run from project root.")
         sys.exit(1)
 
-    # Find all models across all apps
     model_imports = []
     for models_file in glob.glob('*/models.py'):
         app = models_file.split('/')[0]
@@ -130,17 +129,13 @@ def console():
                     model_name = line.split('(')[0].replace('class ', '').strip()
                     model_imports.append(f"from {app}.models import {model_name}")
 
-    startup = '\n'.join(model_imports)
-    if model_imports:
-        startup += f'\nprint("✓ Models loaded: {", ".join(l.split()[-1] for l in model_imports)}")'
-
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-        f.write(startup)
-        startup_file = f.name
+    names = ', '.join(l.split()[-1] for l in model_imports)
+    startup = '\n'.join(model_imports) + f'\nprint("✓ Models loaded: {names}")'
 
     click.echo(click.style("🐍 Django Console — all models imported", fg='green'))
-    subprocess.run([sys.executable, 'manage.py', 'shell', f'--startup={startup_file}'])
-    os.unlink(startup_file)
+    os.environ['PYTHONSTARTUP'] = ''
+    subprocess.run([sys.executable, 'manage.py', 'shell', '-c',
+        startup + '\nimport code; code.interact(local=locals())'])
 
 @cli.command()
 @click.argument('action', default='', required=False)

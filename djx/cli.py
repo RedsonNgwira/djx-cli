@@ -16,6 +16,8 @@ class DJXGroup(click.Group):
                 ("controller", "Generate views and templates"),
                 ("destroy", "Remove generated code"),
                 ("routes", "Show all URL routes"),
+                ("db", "Run migrations (djx db) or reset (djx db reset)"),
+                ("console", "Django shell with all models auto-imported"),
                 ("add", "Install and configure a package"),
                 ("wire", "Wire app URLs to project"),
             ]:
@@ -108,6 +110,61 @@ def routes():
     """Display all URL routes"""
     from .commands.routes import show_routes
     show_routes()
+
+@cli.command()
+def console():
+    """Open Django shell with all models auto-imported"""
+    import subprocess, sys, os, glob
+
+    # Find settings module
+    settings = None
+    for f in glob.glob('*/settings.py'):
+        settings = f.replace('/', '.').replace('.py', '')
+        break
+    if not settings:
+        click.echo("❌ No Django project found. Run from project root.")
+        sys.exit(1)
+
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings)
+
+    # Build auto-import startup script
+    import django
+    django.setup()
+    from django.apps import apps
+    imports = '\n'.join(
+        f"from {m.app_config.name}.models import {m.__name__}"
+        for m in apps.get_models()
+    )
+    startup = f'import django\n{imports}\nprint("✓ Models loaded: {", ".join(m.__name__ for m in apps.get_models())}")'
+
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        f.write(startup)
+        startup_file = f.name
+
+    click.echo(click.style("🐍 Django Console — all models imported", fg='green'))
+    subprocess.run([sys.executable, '-c',
+        f'import os; os.environ["DJANGO_SETTINGS_MODULE"]="{settings}"; '
+        f'import django; django.setup(); '
+        f'exec(open("{startup_file}").read()); '
+        f'import code; code.interact(local=dict(locals(), **globals()))'])
+    os.unlink(startup_file)
+
+@cli.command()
+@click.argument('action', default='', required=False)
+def db(action):
+    """Database shortcuts: djx db (migrate), djx db reset"""
+    import subprocess, sys
+    if action == 'reset':
+        click.echo("🗄️  Resetting database...")
+        subprocess.run([sys.executable, 'manage.py', 'flush', '--no-input'], check=True)
+        subprocess.run([sys.executable, 'manage.py', 'migrate'], check=True)
+        click.echo(click.style("✅ Database reset!", fg='green'))
+    else:
+        click.echo("🗄️  Running migrations...")
+        subprocess.run([sys.executable, 'manage.py', 'makemigrations'], check=True)
+        subprocess.run([sys.executable, 'manage.py', 'migrate'], check=True)
+        click.echo(click.style("✅ Done!", fg='green'))
 
 if __name__ == '__main__':
     cli()

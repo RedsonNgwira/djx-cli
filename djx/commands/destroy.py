@@ -14,7 +14,7 @@ def destroy_resource(resource_type, name):
     from ..utils import pluralize, to_class_name
     
     # Determine app name
-    app_name = pluralize(name).lower()
+    app_name = name.lower()
     class_name = to_class_name(name)
     
     if not os.path.exists(app_name):

@@ -1,11 +1,10 @@
 from .model import generate as gen_model
 from .controller import generate as gen_controller
 from .urls import wire_urls
-from ..utils import pluralize
 
 def generate(name, fields, app_name):
     """Generate full scaffold"""
-    app_name = app_name or pluralize(name).lower()
+    app_name = app_name or name.lower()
     
     gen_model(name, fields, app_name)
     gen_controller(name, app_name)

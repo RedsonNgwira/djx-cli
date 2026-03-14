@@ -2,7 +2,29 @@ import click
 from .generators import scaffold, model, controller, migration
 from .config import add_setting, install_package
 
-@click.group()
+class DJXGroup(click.Group):
+    def resolve_command(self, ctx, args):
+        try:
+            return super().resolve_command(ctx, args)
+        except click.UsageError:
+            click.echo(click.style(f"\n❌ Unknown command: '{args[0]}'", fg='red'))
+            click.echo(click.style("\n📚 Available commands:", fg='cyan'))
+            for cmd, desc in [
+                ("new", "Create a new Django project"),
+                ("scaffold", "Generate full CRUD feature"),
+                ("model", "Generate model only"),
+                ("controller", "Generate views and templates"),
+                ("destroy", "Remove generated code"),
+                ("routes", "Show all URL routes"),
+                ("add", "Install and configure a package"),
+                ("wire", "Wire app URLs to project"),
+            ]:
+                click.echo(f"  djx {cmd:<12} — {desc}")
+            click.echo(click.style("\n💡 AI tools sometimes suggest commands that don't exist yet.", fg='yellow'))
+            click.echo("   Check github.com/RedsonNgwira/djx-cli for the real roadmap.\n")
+            raise SystemExit(1)
+
+@click.group(cls=DJXGroup)
 def cli():
     """djx - Convention over Configuration for Django"""
     pass

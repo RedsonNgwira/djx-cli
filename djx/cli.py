@@ -21,7 +21,7 @@ class DJXGroup(click.Group):
             ]:
                 click.echo(f"  djx {cmd:<12} — {desc}")
             click.echo(click.style("\n💡 AI tools sometimes suggest commands that don't exist yet.", fg='yellow'))
-            click.echo("   Check github.com/RedsonNgwira/djx-cli for the real roadmap.\n")
+            click.echo("   https://github.com/RedsonNgwira/djx-cli for the real roadmap.\n")
             raise SystemExit(1)
 
 @click.group(cls=DJXGroup)

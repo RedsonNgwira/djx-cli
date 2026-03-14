@@ -1,4 +1,4 @@
-from ..utils import ensure_app, parse_fields, to_class_name, pluralize
+from ..utils import ensure_app, parse_fields, to_class_name
 import os
 import glob
 

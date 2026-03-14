@@ -1,5 +1,5 @@
 from pathlib import Path
-from ..utils import to_class_name, pluralize
+from ..utils import to_class_name
 
 def generate(name, app_name):
     """Generate views and templates"""
@@ -14,7 +14,7 @@ from .models import {class_name}
 class {class_name}ListView(ListView):
     model = {class_name}
     template_name = '{app_name}/{model_lower}_list.html'
-    context_object_name = '{pluralize(model_lower)}'
+    context_object_name = '{model_lower}_list'
     paginate_by = 10
 
 class {class_name}DetailView(DetailView):
@@ -49,7 +49,7 @@ class {class_name}DeleteView(DeleteView):
     (template_dir / f"{model_lower}_list.html").write_text(f"""<!DOCTYPE html>
 <html>
 <head>
-    <title>{pluralize(class_name)}</title>
+    <title>{class_name} List</title>
     <style>
         body {{ font-family: Arial, sans-serif; margin: 20px; }}
         table {{ border-collapse: collapse; width: 100%; }}
@@ -61,7 +61,7 @@ class {class_name}DeleteView(DeleteView):
     </style>
 </head>
 <body>
-    <h1>{pluralize(class_name)}</h1>
+    <h1>{class_name} List</h1>
     <a href="{{% url '{model_lower}-create' %}}" class="btn">+ New {class_name}</a>
     
     <table>
@@ -74,7 +74,7 @@ class {class_name}DeleteView(DeleteView):
             </tr>
         </thead>
         <tbody>
-            {{% for item in {pluralize(model_lower)} %}}
+            {{% for item in {model_lower}_list %}}
             <tr>
                 <td>{{{{ item.pk }}}}</td>
                 <td><a href="{{% url '{model_lower}-detail' item.pk %}}">{{{{ item }}}}</a></td>
@@ -85,7 +85,7 @@ class {class_name}DeleteView(DeleteView):
                 </td>
             </tr>
             {{% empty %}}
-            <tr><td colspan="4">No {pluralize(model_lower)} yet.</td></tr>
+            <tr><td colspan="4">No {class_name} records yet.</td></tr>
             {{% endfor %}}
         </tbody>
     </table>
